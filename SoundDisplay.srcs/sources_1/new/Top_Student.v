@@ -17,6 +17,7 @@
 
 module Top_Student (input CLOCK, input BTC, input [1:0]sw,
     input sw7_freeze, sw6_border, sw5_theme, sw4_border_showing, sw3_volumebar, sw2_components,
+    input BTU, BTD,
     input  J_MIC3_Pin3,   // Connect from this signal to Audio_Capture.v
     output J_MIC3_Pin1,   // Connect to this signal from Audio_Capture.v
     output J_MIC3_Pin4,    // Connect to this signal from Audio_Capture.v
@@ -62,8 +63,8 @@ module Top_Student (input CLOCK, input BTC, input [1:0]sw,
     .pixel_data(oled_data), .cs(rgb_cs), .sdin(rgb_sdin), .sclk(rgb_sclk), .d_cn(rgb_d_cn), 
     .resn(rgb_resn), .vccen(rgb_vccen), .pmoden(rgb_pmoden), .teststate(test_sts));
     
-    oled_board (convert_max, sw5_theme, sw6_border, sw4_border_showing, sw3_volumebar, 
-                sw2_components, clk625Hz, pixel_indx, oled_data);
+    oled_board (CLOCK, convert_max, sw5_theme, sw6_border, sw4_border_showing, sw3_volumebar, 
+                sw2_components, clk625Hz, pixel_indx, BTU, BTD, oled_data);
     
     // Instantiate micro capture  
     Audio_Capture mic_capture(

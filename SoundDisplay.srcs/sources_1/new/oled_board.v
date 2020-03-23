@@ -20,10 +20,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module oled_board(input [4:0] volume_level, input theme, sw6, border_showing, volume_bar, components,
-                  input clk_6p25, input [12:0] pix_idx, 
+module oled_board(input CLOCK, input [4:0] volume_level, input theme, sw6, border_showing, volume_bar, components,
+                  input clk_6p25, input [12:0] pix_idx, input btu, btd,
                   output reg [15:0] oled_dat_out); 
-    
+    //parameter 
     parameter WHITE = 16'hFFFF;
     parameter BLACK = 16'h0;
     parameter BLUEBLUE = 16'h003F;
@@ -32,1656 +32,290 @@ module oled_board(input [4:0] volume_level, input theme, sw6, border_showing, vo
     parameter GREEN = 16'h07E0;
     parameter YELLOW = 16'hFFC0;
     parameter PINKPINK = 16'hFC70;
-    //parameter 
     
+    wire up_pressed, down_pressed;
+    reset button_up (CLOCK, btu, up_pressed);
+    reset button_down (CLOCK, btd, down_pressed);
+    
+    wire clk_6hz;
+    clk6Hz clock6 (CLOCK, clk_6hz);
+    
+    reg [6:0] width_min = 42;
+    reg [6:0] width_max = 52;
     
     wire [6:0] width;
     wire [5:0] height;
     
     xy_coordinate (pix_idx, width, height);
     
-    always @ (posedge clk_6p25) begin
-        case (volume_level)
-            0: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
+    always @ (posedge clk_6hz) begin
+        if (up_pressed) begin
+            width_min = (width_min >= 22) ? width_min - 1 : width_min;
+            width_max = (width_max <= 72) ? width_max + 1 : width_max;
         end
-        // endcase 0
-            1: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57))) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57))) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57))) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57))) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
+        
+        if (down_pressed) begin
+            width_min = (width_min <= 46) ? width_min + 1 : width_min;
+            width_max = (width_max >= 48) ? width_max - 1 : width_max;
         end
-        // endcase 1
-            2: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53))) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 2
-            3: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 3
-            4: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 4
-            5: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 5
-            6: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 6
-            7: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 7
-            8: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 8
-            9: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else 
-                        begin                             
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 9
-            10: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 10
-            11: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else 
-                        begin
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 11
-            12: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 12 
-            13: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-            // endcase 13
-            14: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-        // endcase 14
-            15: begin  
-            if (components) begin
-                if (!theme) begin // original theme: BLACK & WHITE border
-                    if (!sw6) begin // one pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end 
-                    else // three pixels border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= BLACK;
-                        end
-                    end
-                end 
-                else // alternative theme: PINKPINK & BLACK BORDER
-                begin 
-                    if (!sw6) begin // one-pixel border
-                        if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                        begin
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else  
-                        begin
-                            oled_dat_out <= PINKPINK;
-                        end
-                    end 
-                    else // three-pixel border
-                    begin
-                        if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                            oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                        end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                     ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                        begin // first layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                        end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                        begin // second layer
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                        end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                     ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) )
-                        begin
-                            oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                        end else 
-                        begin
-                            oled_dat_out <= PINKPINK;   
-                        end
-                    end
-                end
-            end else
-            begin
-                oled_dat_out <= BLACK;
-            end
-        end
-            default: begin  
-                if (components) begin
-                    if (!theme) begin // original theme: BLACK & WHITE border
-                        if (!sw6) begin // one pixel border
-                            if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                            begin
-                                oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                            end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                         ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                            begin // first layer
-                                oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                            end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                            begin // second layer
-                                oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                            end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 07 && height >= 06)) )
-                            begin
-                                oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                            end else 
-                            begin
-                                oled_dat_out <= BLACK;
-                            end
-                        end 
-                        else // three pixels border
-                        begin
-                            if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
-                            begin
-                                oled_dat_out <= (!border_showing) ? BLACK : WHITE;
-                            end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                         ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                            begin // first layer
-                                oled_dat_out <= (!volume_bar) ? BLACK : GREEN;
-                            end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                            begin // second layer
-                                oled_dat_out <= (!volume_bar) ? BLACK : YELLOW;
-                            end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 07 && height >= 06)) )
-                            begin
-                                oled_dat_out <= (!volume_bar) ? BLACK : RED;
-                            end else 
-                            begin
-                                oled_dat_out <= BLACK;
-                            end
-                        end
-                    end 
-                    else // alternative theme: PINKPINK & BLACK BORDER
-                    begin 
-                        if (!sw6) begin // one-pixel border
-                            if ((width==0) || (height==0) || (width==95) || (height==63)) 
-                            begin
-                                oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                            end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                         ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                            begin // first layer
-                                oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                            end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                            begin // second layer
-                                oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                            end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 07 && height >= 06)) )
-                            begin
-                                oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                            end else  
-                            begin
-                                oled_dat_out <= PINKPINK;
-                            end
-                        end 
-                        else // three-pixel border
-                        begin
-                            if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) begin                
-                                oled_dat_out <= (!border_showing) ? PINKPINK : BLUEBLUE;
-                            end else if (((width >= 42 && width <= 52) && (height <= 59 && height >= 57)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 55 && height >= 53)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 51 && height >= 49)) || 
-                                         ((width >= 42 && width <= 52) && (height <= 47 && height >= 45)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 43 && height >= 41)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 39 && height >= 37)) ) 
-                            begin // first layer
-                                oled_dat_out <= (!volume_bar) ? PINKPINK : GREEN;
-                            end else if (((width >= 42 && width <= 52) && (height <= 35 && height >= 34)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 32 && height >= 31)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 29 && height >= 28)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 26 && height >= 25)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 23 && height >= 22)) ) 
-                            begin // second layer
-                                oled_dat_out <= (!volume_bar) ? PINKPINK : YELLOW;
-                            end else if (((width >= 42 && width <= 52) && (height <= 19 && height >= 18)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 16 && height >= 15)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 13 && height >= 12)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 10 && height >= 09)) ||
-                                         ((width >= 42 && width <= 52) && (height <= 07 && height >= 06)) )
-                            begin
-                                oled_dat_out <= (!volume_bar) ? PINKPINK : RED;
-                            end else 
-                            begin
-                                oled_dat_out <= PINKPINK;   
-                            end
-                        end
-                    end
-                end else
-                begin
-                    oled_dat_out <= BLACK;
-                end
-            end
-        endcase
     end
+    
+    always @ (posedge clk_6p25) begin       
+        // changing height of the volume bar
+        if (components) begin
+            if (!sw6) begin // one pixel border
+                if ((width==0) || (height==0) || (width==95) || (height==63)) 
+                    case ({border_showing, theme}) 
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= WHITE;
+                        2'b11: oled_dat_out <= BLUEBLUE;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 59 && height >= 57) && volume_level >= 1)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase     
+                else if ((width >= width_min && width <= width_max) && (height <= 55 && height >= 53) && volume_level >= 2) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 51 && height >= 49) && volume_level >= 3)  
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 47 && height >= 45) && volume_level >= 4) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 43 && height >= 41) && volume_level >= 5) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 39 && height >= 37) && volume_level >= 6) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 35 && height >= 34) && volume_level >= 7)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 32 && height >= 31) && volume_level >= 8)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase  
+                else if ((width >= width_min && width <= width_max) && (height <= 29 && height >= 28) && volume_level >= 9) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 26 && height >= 25) && volume_level >= 10) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 23 && height >= 22) && volume_level >= 11) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 19 && height >= 18) && volume_level >= 12)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 16 && height >= 15) && volume_level >= 13)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 13 && height >= 12) && volume_level >= 14) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 10 && height >= 09) && volume_level >= 15) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 07 && height >= 06) && volume_level >= 16)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else 
+                begin
+                    oled_dat_out <= (theme) ? PINKPINK : BLACK;
+                end
+            end 
+            else // three pixels border
+            begin
+                if ((width<=2) || (height<=2) || (width>=93) || (height>=61)) 
+                    case ({border_showing, theme}) 
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= WHITE;
+                        2'b11: oled_dat_out <= BLUEBLUE;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 59 && height >= 57) && volume_level >= 1)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase     
+                else if ((width >= width_min && width <= width_max) && (height <= 55 && height >= 53) && volume_level >= 2) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 51 && height >= 49) && volume_level >= 3)  
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 47 && height >= 45) && volume_level >= 4) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 43 && height >= 41) && volume_level >= 5) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase
+                else if ((width >= width_min && width <= width_max) && (height <= 39 && height >= 37) && volume_level >= 6) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= GREEN;
+                        2'b11: oled_dat_out <= GREEN;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 35 && height >= 34) && volume_level >= 7)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 32 && height >= 31) && volume_level >= 8)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase  
+                else if ((width >= width_min && width <= width_max) && (height <= 29 && height >= 28) && volume_level >= 9) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 26 && height >= 25) && volume_level >= 10) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 23 && height >= 22) && volume_level >= 11) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= YELLOW;
+                        2'b11: oled_dat_out <= YELLOW;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 19 && height >= 18) && volume_level >= 12)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 16 && height >= 15) && volume_level >= 13)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 13 && height >= 12) && volume_level >= 14) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 10 && height >= 09) && volume_level >= 15) 
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else if ((width >= width_min && width <= width_max) && (height <= 07 && height >= 06) && volume_level >= 16)
+                    case ({volume_bar, theme})
+                        2'b00: oled_dat_out <= BLACK;
+                        2'b01: oled_dat_out <= PINKPINK;
+                        2'b10: oled_dat_out <= RED;
+                        2'b11: oled_dat_out <= RED;
+                    endcase 
+                else 
+                begin
+                    oled_dat_out <= (theme) ? PINKPINK : BLACK;
+                end
+            end 
+        end else oled_dat_out <= BLACK;
+    end 
+            
+   
 endmodule
