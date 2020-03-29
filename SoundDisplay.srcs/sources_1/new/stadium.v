@@ -21,7 +21,7 @@
 
 
 module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
-               output reg [15:0] oled_dat_out);
+               output reg [15:0] oled_dat_out, output reg GOAL = 0, output reg MISS = 0);
     parameter WHITE = 16'hFFFF;
     parameter GREEN = 16'h07E0;
     parameter DARK_WHITE = 16'hFC70;
@@ -47,11 +47,10 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
     reg [6:0] width_ball = 19;
     reg [5:0] height_ball = 31;
     reg stop_ball = 0;
-    reg reset = 0;
+//    reg reset = 0;
     reg [20:0] counter = 0;
     reg disableMode = 0;
     reg freeze_gk = 0;
-    reg GOAL = 0;
     
     // display all on the board
     always @ (posedge clk_6p25) begin
@@ -181,23 +180,25 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
                     mode <= 2;
                     freeze_gk = 1;
                     GOAL = 0;
+                    MISS = 1;
                 end
                  
                 if (((width_ball >= 85) && (width_ball <= 94)) || (height_ball == 61) || (height_ball == 0)) begin
                     stop_ball = 1;
                     mode <= 2;
                     GOAL = 1;
+                    MISS = 0;
                     freeze_gk = 1;
                 end
                 
-                if (reset) begin
-                    width_ball = 19;
-                    height_ball = 31;
-                    width_striker = 11;
-                    height_striker = 17;
-                    mode <= 1;
-                    disableMode = 0;
-                end
+//                if (reset) begin
+//                    width_ball = 19;
+//                    height_ball = 31;
+//                    width_striker = 11;
+//                    height_striker = 17;
+//                    mode <= 1;
+//                    disableMode = 0;
+//                end
             end
         end else begin
             disableMode = 1;
@@ -209,6 +210,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
             oled_dat_out <= BLACK;
             stop_ball = 0;
             GOAL = 0;
+            MISS = 0;
             freeze_gk = 0;
         end
 

@@ -38,6 +38,9 @@ module Top_Student (input CLOCK, input BTC, input [1:0]sw,
     wire [15:0] oled_data;
     wire [15:0] oled_data_sound;
     wire [15:0] oled_data_stadium;
+    wire [15:0] oled_data_goal;
+    wire GOAL;
+    wire MISS;
     
     wire clk3Hz;
     reg [31:0] COUNT = 0;
@@ -46,13 +49,16 @@ module Top_Student (input CLOCK, input BTC, input [1:0]sw,
     always @ (posedge CLOCK)
     begin
         COUNT <= COUNT+1;
-        if (sw[0] == 1 && sw[1] == 0) mode <= 1;
-        else if (sw[0] == 0 && sw[1] == 1) mode <= 2;
-        else if (sw[0] == 1 && sw[1] == 1) mode <= 3;
+        if (sw[0] && !sw[1]) mode <= 1;
+        else if (!sw[0] && sw[1]) mode <= 2;
+        else if (sw[0] && sw[1] && GOAL) mode <= 4;
+        else if (sw[0] && sw[1] && MISS) mode <= 5;
+        else if (sw[0] && sw[1]) mode <= 3;
         else mode <= 0;
     end
     
-    assign oled_data = (mode <=2 && mode != 0) ? oled_data_sound : (mode == 3) ? oled_data_stadium : 0;
+    assign oled_data = (mode <=2 && mode != 0) ? oled_data_sound : (mode == 3) ? oled_data_stadium : 
+                       (mode == 4 || mode == 5) ? oled_data_goal : 0;
     
     clk20k (CLOCK, clk20khz);
     clk6p25m (CLOCK, clk625Hz);
@@ -72,7 +78,9 @@ module Top_Student (input CLOCK, input BTC, input [1:0]sw,
                 sw2_components, clk625Hz, pixel_indx, BTU, BTD, oled_data_sound);
                 
     stadium (.clk_6p25(clk625Hz), .freeze(sw7_freeze), .pix_indx(pixel_indx), 
-    .sw0(sw[0]), .sw1(sw[1]), .oled_dat_out(oled_data_stadium));
+    .sw0(sw[0]), .sw1(sw[1]), .oled_dat_out(oled_data_stadium), .GOAL(GOAL), .MISS(MISS));
+    
+    goal_display(.clk_6p25(clk625Hz), .pix_indx(pixel_indx), .goal(GOAL), .miss(MISS), .oled_dat_out(oled_data_goal));
     
     // Instantiate micro capture  
     Audio_Capture mic_capture(
