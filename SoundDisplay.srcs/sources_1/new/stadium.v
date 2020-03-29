@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
+module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
                output reg [15:0] oled_dat_out);
     parameter WHITE = 16'hFFFF;
     parameter GREEN = 16'h07E0;
@@ -187,6 +187,7 @@ module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input
                     stop_ball = 1;
                     mode <= 2;
                     GOAL = 1;
+                    freeze_gk = 1;
                 end
                 
                 if (reset) begin
