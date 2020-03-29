@@ -50,6 +50,8 @@ module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input
     reg reset = 0;
     reg [20:0] counter = 0;
     reg disableMode = 0;
+    reg freeze_gk = 0;
+    reg GOAL = 0;
     
     // display all on the board
     always @ (posedge clk_6p25) begin
@@ -57,13 +59,14 @@ module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input
             counter <= counter + 1;
             if (counter == 0) begin
                 // goalkeeper moving
-                height_goalkeeper <= (height_goalkeeper >= 11 && height_goalkeeper <= 41 && !reverse_goalkeeper) ? height_goalkeeper + 2 :
-                                    (height_goalkeeper >= 11 && height_goalkeeper <= 41 && reverse_goalkeeper) ? height_goalkeeper - 2 : 
-                                    (height_goalkeeper <= 11) ? height_goalkeeper + 2 :
-                                    (height_goalkeeper >= 41) ? height_goalkeeper - 2 : height_goalkeeper;
-                reverse_goalkeeper <= (height_goalkeeper <= 11) ? 0 :
-                                     (height_goalkeeper >= 41) ? 1 : reverse_goalkeeper;
-                
+                if (!freeze_gk) begin
+                    height_goalkeeper <= (height_goalkeeper >= 11 && height_goalkeeper <= 41 && !reverse_goalkeeper) ? height_goalkeeper + 2 :
+                                        (height_goalkeeper >= 11 && height_goalkeeper <= 41 && reverse_goalkeeper) ? height_goalkeeper - 2 : 
+                                        (height_goalkeeper <= 11) ? height_goalkeeper + 2 :
+                                        (height_goalkeeper >= 41) ? height_goalkeeper - 2 : height_goalkeeper;
+                    reverse_goalkeeper <= (height_goalkeeper <= 11) ? 0 :
+                                         (height_goalkeeper >= 41) ? 1 : reverse_goalkeeper;
+                end
                 // striker moving
                 if (mode == 0 && sw0 && sw1) begin
                     if (width_striker >= 11 && width_striker <= 15)                
@@ -82,7 +85,7 @@ module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input
                 end
             
                 if (mode == 1) mode <= 2;
-                if (mode == 2) mode <= 3;            
+                if (mode == 2 && !GOAL) mode <= 3;            
             
             end
         
@@ -172,16 +175,18 @@ module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input
                     width_ball <= (stop_ball) ? width_ball : width_ball + 4; // cases
                     height_ball <= (stop_ball) ? height_ball : height_ball + 1;
                 end
-                
-                if (((width_ball >= 85) && (width_ball <= 94)) || (height_ball == 61) || (height_ball == 0) || 
-                    (width_ball >= 71 && height_ball >= height_goalkeeper && height_ball <= height_goalkeeper + 11)) begin
-                    stop_ball = 1; 
-                    reset = 1;
-                    oled_dat_out <= BLACK;
+                if ((width_ball >= 71 && height_ball >= height_goalkeeper && height_ball <= height_goalkeeper + 11))
+                begin
+                    stop_ball = 1; // the goalkeeper caught the ball
+                    mode <= 2;
+                    freeze_gk = 1;
+                    GOAL = 0;
                 end
-                else begin
-                    stop_ball = 0;
-                    reset = 0;
+                 
+                if (((width_ball >= 85) && (width_ball <= 94)) || (height_ball == 61) || (height_ball == 0)) begin
+                    stop_ball = 1;
+                    mode <= 2;
+                    GOAL = 1;
                 end
                 
                 if (reset) begin
@@ -189,7 +194,7 @@ module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input
                     height_ball = 31;
                     width_striker = 11;
                     height_striker = 17;
-                    mode = 0;
+                    mode <= 1;
                     disableMode = 0;
                 end
             end
@@ -199,8 +204,11 @@ module stadium(input CLOCK, input clk_6p25, freeze, input [12:0] pix_indx, input
             height_ball = 31;
             width_striker = 11;
             height_striker = 17;
-            mode = 0;
+            mode <= 0;
             oled_dat_out <= BLACK;
+            stop_ball = 0;
+            GOAL = 0;
+            freeze_gk = 0;
         end
 
     end
