@@ -71,7 +71,8 @@ module Top_Student (input CLOCK, input BTC, input [1:0]sw,
     oled_board (CLOCK, convert_max, sw5_theme, sw6_border, sw4_border_showing, sw3_volumebar, 
                 sw2_components, clk625Hz, pixel_indx, BTU, BTD, oled_data_sound);
                 
-    stadium (.clk_6p25(clk625Hz), .pix_indx(pixel_indx), .oled_dat_out(oled_data_stadium));
+    stadium (.CLOCK(CLOCK), .clk_6p25(clk625Hz), .freeze(sw7_freeze), .pix_indx(pixel_indx), 
+    .sw0(sw[0]), .sw1(sw[1]), .oled_dat_out(oled_data_stadium));
     
     // Instantiate micro capture  
     Audio_Capture mic_capture(

@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 03/23/2020 03:01:08 PM
+// Create Date: 03/26/2020 10:43:57 PM
 // Design Name: 
-// Module Name: clk_6Hz
+// Module Name: clk6Hz
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -21,6 +21,7 @@
 
 
 module clk6Hz(input CLOCK, output reg CLOCKOUT = 0);
+    
     reg [22:0] counter = 0;
     
     always @ (posedge CLOCK) begin
@@ -28,4 +29,3 @@ module clk6Hz(input CLOCK, output reg CLOCKOUT = 0);
         CLOCKOUT <= (counter == 0) ? ~CLOCKOUT : CLOCKOUT;
     end
 endmodule
-
