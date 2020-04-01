@@ -87,8 +87,9 @@ module Top_Student (input CLOCK, input sw1, sw0, sw15, BTC, BTU, BTD, BTL, BTR,
     oled_board (CLOCK, convert_max, sw5_theme, sw6_border, sw4_border_showing, sw3_volumebar, 
                 sw2_components, clk625Hz, pixel_indx, BTU, BTD, oled_data_sound);
                 
-    stadium (.clk_6p25(clk625Hz), .freeze(sw8), .pix_indx(pixel_indx), .actual(convert_max_slow),
-             .target(target), .sw15(sw15), .oled_dat_out(oled_data_stadium), .GOAL(GOAL), .MISS(MISS));
+    stadium (.clk_6p25(clk625Hz), .freeze(sw8), .pix_indx(pixel_indx), .actual(convert_max_slow), 
+             .btnc(btc_pressed), .target(target), .sw15(sw15), .oled_dat_out(oled_data_stadium), 
+             .GOAL(GOAL), .MISS(MISS));
     
     goal_display(.clk_6p25(clk625Hz), .pix_indx(pixel_indx), .goal(GOAL), .miss(MISS), .oled_dat_out(oled_data_goal));
     

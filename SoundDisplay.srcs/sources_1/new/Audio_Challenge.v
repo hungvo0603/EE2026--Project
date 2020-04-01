@@ -59,7 +59,7 @@ module Audio_Challenge(
     reg [4:0] below = 0;
     always @ (posedge CLK)
     begin
-        if (mode == 3 || mode == 5 || mode == 6)
+        if (mode == 3)
         begin
             catch <= 0;
             if (press_clk == 0)
@@ -159,15 +159,13 @@ module Audio_Challenge(
                         else turnB <= turnB + 1;
                     end
                     catch <= 1;
-                    if (mode == 6) begin
+                    if (mode >= 5) begin
                         figure1 <= 0;
                         figure2 <= 0;
                     end
                 end
             end
             pointer <= 0;
-//            figure1 <= 0;
-//            figure2 <= 0;
         end
         else 
         begin
@@ -182,6 +180,7 @@ module Audio_Challenge(
             status <= 0;
         end
     end
+    
     always @ (posedge CLK)
     begin
         if (blink_clk == 0)
