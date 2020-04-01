@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
+module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw15, input [4:0] actual, target,
                output reg [15:0] oled_dat_out, output reg GOAL = 0, output reg MISS = 0);
     parameter WHITE = 16'hFFFF;
     parameter GREEN = 16'h07E0;
@@ -55,19 +55,26 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
     // display all on the board
     always @ (posedge clk_6p25) begin
         if (freeze && disableMode) begin
+            // CHANGING 
             counter <= counter + 1;
             if (counter == 0) begin
                 // goalkeeper moving
-                if (!freeze_gk) begin
-                    height_goalkeeper <= (height_goalkeeper >= 11 && height_goalkeeper <= 41 && !reverse_goalkeeper) ? height_goalkeeper + 2 :
-                                        (height_goalkeeper >= 11 && height_goalkeeper <= 41 && reverse_goalkeeper) ? height_goalkeeper - 2 : 
-                                        (height_goalkeeper <= 11) ? height_goalkeeper + 2 :
-                                        (height_goalkeeper >= 41) ? height_goalkeeper - 2 : height_goalkeeper;
+                if (!freeze_gk) begin               
+                    if (actual == target) begin
+                        height_goalkeeper <= (!reverse_goalkeeper) ? height_goalkeeper + 2 : height_goalkeeper - 2;
+                    end else if (target <= actual + 2 && target > actual) begin // goslkeeper moves down
+                        height_goalkeeper <= (!reverse_goalkeeper) ? height_goalkeeper - 2 : height_goalkeeper + 2;
+                    end else if (target >= actual - 2 && target < actual) begin // goalkeeper moves up
+                        height_goalkeeper <= (!reverse_goalkeeper) ? height_goalkeeper + 2 : height_goalkeeper - 2;
+                    end else begin // stands still
+                        height_goalkeeper <= height_goalkeeper;
+                    end
+                    
                     reverse_goalkeeper <= (height_goalkeeper <= 11) ? 0 :
                                          (height_goalkeeper >= 41) ? 1 : reverse_goalkeeper;
                 end
                 // striker moving
-                if (mode == 0 && sw0 && sw1) begin
+                if (mode == 0 && sw15) begin
                     if (width_striker >= 11 && width_striker <= 15)                
                         width_striker <= width_striker + 1;
                     else if (width_striker < 11) width_striker <= width_striker + 1;
@@ -77,7 +84,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
                     else width_striker <= width_striker;      
                 end
             
-                if (mode == 0 && sw0 && sw1) begin
+                if (mode == 0 && sw15) begin
                     height_striker <= (height_striker >= 17 && height_striker <= 21) ? height_striker + 1 :
                                       (height_striker <= 17) ? height_striker + 1 :
                                       (height_striker >= 21) ? height_striker - 1 : height_striker;
@@ -88,7 +95,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
             
             end
         
-        
+            // DRAWING
             // ball
             if ((width >= width_ball && width <= width_ball+3) && (height >= height_ball && height <= height_ball+3))
                 oled_dat_out <= RED;
@@ -133,7 +140,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
                 oled_dat_out <= GREEN;
             
             // striker
-            if (mode == 0 && sw0 && sw1) begin
+            if (mode == 0 && sw15) begin
                 if   (((height <= height_striker + 8 && height >= height_striker + 2) && (width == width_striker - 1)) ||                 // body
                      ((height <= height_striker + 2 && height >= height_striker) && (width >= width_striker - 2  && width <= width_striker)) || // head
                      ((height == height_striker + 4) && (width == width_striker || width == width_striker - 2)) ||                // arms
@@ -144,7 +151,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
                      ((height == height_striker + 10) && (width == width_striker + 2 || width == width_striker - 4)))
                 oled_dat_out <= BLACK;
             // kick stand
-            end else if (mode == 1 && sw0 && sw1) begin //21 //15
+            end else if (mode == 1 && sw15) begin //21 //15
                 if   (((height <= 29 && height >= 23) && (width == 15)) ||                 // body
                      ((height <= 23 && height >= 21) && (width >= 14  && width <= 16)) || // head
                      ((height == 25) && (width == 16 || width == 14)) ||                // arms
@@ -156,7 +163,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
                      (height == 32 && width == 17) || (height == 32 && width == 13))
                 oled_dat_out <= BLACK;
             // kick the ball 
-            end else if ((mode == 2 || mode == 3) && sw0 && sw1) begin
+            end else if ((mode == 2 || mode == 3) && sw15) begin
                 if  (((height <= 29 && height >= 23) && (width == 15)) ||                 // body
                     ((height <= 23 && height >= 21) && (width >= 14  && width <= 16)) || // head
                     ((height == 25) && (width == 16 || width == 14)) ||                // arms
@@ -168,44 +175,49 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw0, sw1,
                 oled_dat_out <= BLACK;
             end
             
-            if (mode == 3 && sw0 && sw1) begin
+            if (mode == 3 && sw15) begin
                 counter_ball <= counter_ball + 1;
                 if (counter_ball == 0) begin
                     width_ball <= (stop_ball) ? width_ball : width_ball + 4; // cases
                     height_ball <= (stop_ball) ? height_ball : height_ball + 1;
-                end
-                if ((width_ball >= 71 && height_ball >= height_goalkeeper && height_ball <= height_goalkeeper + 11))
+                    // +4 +1 // +4 -1 // +4 -2 // +4 +2 // +4 +0
+                    if (!stop_ball) begin
+                        width_ball <= width_ball + 4;
+                        height_ball <= (target == actual) ? height_ball :
+                                       (target <= actual + 2 && target > actual) ? height_ball + 1 :
+                                       (target >= actual - 2 && target < actual) ? height_ball - 1 :
+                                       (target > actual + 2) ? height_ball + 2 : height_ball - 2;
+                    end else begin
+                        width_ball <= width_ball;
+                        height_ball <= height_ball;
+                    end
+                end // 90 94 11 52
+                if ((width_ball >= 71 && height_ball >= height_goalkeeper && height_ball <= height_goalkeeper + 11) ||
+                    (width_ball >= 80 && (height_ball >= 52 || height_ball <= 11)) ||
+                    (height_ball == 61 || height_ball == 0))
                 begin
-                    stop_ball = 1; // the goalkeeper caught the ball
+                    stop_ball = 1; // the goalkeeper caught the ball // or the ball goes out eventually
                     mode <= 2;
                     freeze_gk = 1;
                     GOAL = 0;
                     MISS = 1;
                 end
-                 
-                if (((width_ball >= 85) && (width_ball <= 94)) || (height_ball == 61) || (height_ball == 0)) begin
+                else if (((width_ball >= 85) && (width_ball <= 94)) && (height_ball >= 11) && (height_ball <= 51)) begin
                     stop_ball = 1;
                     mode <= 2;
                     GOAL = 1;
                     MISS = 0;
                     freeze_gk = 1;
                 end
-                
-//                if (reset) begin
-//                    width_ball = 19;
-//                    height_ball = 31;
-//                    width_striker = 11;
-//                    height_striker = 17;
-//                    mode <= 1;
-//                    disableMode = 0;
-//                end
             end
         end else begin
             disableMode = 1;
             width_ball = 19;
             height_ball = 31;
+            height_goalkeeper = 30;
             width_striker = 11;
             height_striker = 17;
+            reverse_goalkeeper <= 0;
             mode <= 0;
             oled_dat_out <= BLACK;
             stop_ball = 0;

@@ -70,28 +70,17 @@ module goal_display(input clk_6p25, input [12:0] pix_indx, input goal, input mis
             else if (((width >= 44 && width <= 45) || (width >= 49 && width <= 50)) && (height >= 25 && height <= 35) ||
                       (width >= 46 && width <= 48) && ((height >= 25 && height <= 26) || (height >= 34 && height <= 35)))
                 oled_dat_out <= BLACK; // O
-            else if (((width >= 53 && width <= 54) || (width >= 59 && width <= 60)) && (height >= 25 && height <= 35) ||
+            else if (((width >= 53 && width <= 54 && (height >= 25 && height <= 35)) || 
+                      (width >= 57 && width <= 58 && height >= 25 && height <= 29)) || 
+                      (width >= 59 && width <= 60 && height >= 29 && height <= 35) ||
                       (width >= 55 && width <= 58) && ((height >= 25 && height <= 26) || (height >= 34 && height <= 35) ||
                       (height >= 29 && height <= 30)))
                 oled_dat_out <= BLACK; // B
-            else if (((width >= 62 && width <= 63) || (width >= 66 && width <= 67) || (width >= 70 && width <= 71)) &&
+            else if (((width >= 63 && width <= 64) || (width >= 67 && width <= 68) || (width >= 71 && width <= 72)) &&
                       (height >= 34 && height <= 35))
-                oled_dat_out <= BLACK;
+                oled_dat_out <= BLACK; // dot dot dot ...
             else oled_dat_out <= WHITE;
         end
         else oled_dat_out <= BLACK;
     end
 endmodule
-
-//            if ((width >= 25 && width <= 31 && height >= 25 && height <= 26) ||
-//                (width >= 25 && width <= 26 && height >= 27 && height <= 29) ||
-//                (width >= 30 && width <= 31 && height >= 31 && height <= 33) ||
-//                (width >= 25 && width <= 31 && height >= 30 && height <= 31) ||
-//                (width >= 25 && width <= 31 && height >= 34 && height <= 35))
-//                oled_dat_out <= BLACK; // S
-//            else if (((width >= 34 && width <= 35) || (width >= 40 && width <= 41) && height >= 25 && height <= 35) ||
-//                      (width >= 36 && width <= 39 && height >= 30 && height <= 31))
-//                oled_dat_out <= BLACK; // H
-//            else if (((width >= 44 && width <= 45) || (width >= 49 && width <= 50) && height >= 25 && height <= 35) ||
-//                      (width >= 46 && width <= 48) && ((height >= 25 && height <= 26) || height >= 30 && height <= 31))
-//                oled_dat_out <= BLACK; // A
