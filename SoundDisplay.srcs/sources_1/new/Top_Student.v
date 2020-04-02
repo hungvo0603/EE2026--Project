@@ -47,7 +47,8 @@ module Top_Student (input CLOCK, input sw1, sw0, sw15, BTC, BTU, BTD, BTL, BTR,
     
     reg [31:0] COUNT = 0;
     reg [3:0] mode = 0; //Allow the user to choose desired modes via the switches
-    wire [3:0] figure1, figure2;
+    wire [3:0] figure1, figure2, turnA, turnB;
+    wire turn;
 
     always @ (posedge CLOCK)
     begin
@@ -89,7 +90,7 @@ module Top_Student (input CLOCK, input sw1, sw0, sw15, BTC, BTU, BTD, BTL, BTR,
                 
     stadium (.clk_6p25(clk625Hz), .freeze(sw8), .pix_indx(pixel_indx), .actual(convert_max_slow), 
              .btnc(btc_pressed), .target(target), .sw15(sw15), .oled_dat_out(oled_data_stadium), 
-             .GOAL(GOAL), .MISS(MISS));
+             .GOAL(GOAL), .MISS(MISS), .turnA(turnA), .turnB(turnB), .turn(turn));
     
     goal_display(.clk_6p25(clk625Hz), .pix_indx(pixel_indx), .goal(GOAL), .miss(MISS), .oled_dat_out(oled_data_goal));
     
@@ -121,7 +122,10 @@ module Top_Student (input CLOCK, input sw1, sw0, sw15, BTC, BTU, BTD, BTL, BTR,
                 .an(an),
                 .seg(seg),
                 .figure1(figure1),
-                .figure2(figure2)
+                .figure2(figure2), 
+                .turnA(turnA),
+                .turnB(turnB),
+                .turn(turn)
                 );
                      
 

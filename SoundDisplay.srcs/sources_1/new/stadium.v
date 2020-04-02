@@ -21,6 +21,7 @@
 
 
 module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw15, btnc, input [4:0] actual, target,
+               input [3:0] turnA, turnB, input turn,
                output reg [15:0] oled_dat_out, output reg GOAL = 0, output reg MISS = 0);
     parameter WHITE = 16'hFFFF;
     parameter GREEN = 16'h07E0;
@@ -33,6 +34,10 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw15, btnc, 
     wire [5:0] height;
     
     xy_coordinate (pix_indx, width, height);
+    
+    wire [15:0] oled_dat_turn;
+    display_turn (.CLOCK(clk_6p25), .width(width), .height(height), .turn(turn), .turnA(turnA), 
+                  .turnB(turnB), .oled_dat_out(oled_dat_turn));
     
 //    wire clk_6hz;
 //    clk6Hz clk_6 (CLOCK, clk_6hz);
@@ -227,7 +232,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw15, btnc, 
             height_striker = 17;
             reverse_goalkeeper <= 0;
             mode <= 0;
-            oled_dat_out <= BLACK;
+            oled_dat_out <= oled_dat_turn;
             stop_ball = 0;
             GOAL = 0;
             MISS = 0;

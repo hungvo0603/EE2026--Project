@@ -31,7 +31,8 @@ module Audio_Challenge(
     input [4:0] convert_max_slow,
     output [3:0] an,
     output [7:0] seg,
-    output reg [3:0] figure1 = 0, figure2 = 0
+    output reg [3:0] figure1 = 0, figure2 = 0, turnA = 0, turnB = 0, 
+    output reg turn = 0
     );
     reg goal = 0;
     reg [3:0] score1 = 0;
@@ -44,7 +45,7 @@ module Audio_Challenge(
     wire [3:0] reset_fig2;
     wire [3:0]temp_mode;
     reg pointer = 0;
-    reg turn = 0;
+//    reg turn = 0;
     reg blink = 0;
     reg [3:0]new_mode = 0;
     reg catch = 0;
@@ -53,8 +54,8 @@ module Audio_Challenge(
     // 1: A wins
     // 2: B wins
     // 3: draw
-    reg [3:0]turnA = 0;
-    reg [3:0]turnB = 0;
+//    reg [3:0]turnA = 0;
+//    reg [3:0]turnB = 0;
     reg [4:0] upper = 16;
     reg [4:0] below = 0;
     always @ (posedge CLK)
