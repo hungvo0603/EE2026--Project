@@ -1,16 +1,16 @@
 `timescale 1ns / 1ps
 
 //////////////////////////////////////////////////////////////////////////////////
-//
+//  
 //  FILL IN THE FOLLOWING INFORMATION:
 //
-//  LAB SESSION DAY (Delete where applicable): MONDAY P.M, TUESDAY P.M, WEDNESDAY P.M, THURSDAY A.M., THURSDAY P.M
+//  LAB SESSION DAY : MONDAY P.M
 //
-//  STUDENT A NAME: 
-//  STUDENT A MATRICULATION NUMBER: 
+//  STUDENT A NAME: TRA QUANG MINH THONG
+//  STUDENT A MATRICULATION NUMBER: A0200659H
 //
-//  STUDENT B NAME: 
-//  STUDENT B MATRICULATION NUMBER: 
+//  STUDENT B NAME: VO QUANG HUNG
+//  STUDENT B MATRICULATION NUMBER: A0200697A
 //
 //////////////////////////////////////////////////////////////////////////////////
 
