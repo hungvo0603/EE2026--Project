@@ -32,7 +32,8 @@ module Audio_Challenge(
     output [3:0] an,
     output [7:0] seg,
     output reg [3:0] figure1 = 0, figure2 = 0, turnA = 0, turnB = 0, 
-    output reg turn = 0
+    output reg turn = 0,
+    output reg [1:0] status = 0
     );
     reg goal = 0;
     reg [3:0] score1 = 0;
@@ -49,7 +50,7 @@ module Audio_Challenge(
     reg blink = 0;
     reg [3:0]new_mode = 0;
     reg catch = 0;
-    reg [1:0]status = 0; 
+//    reg [1:0]status = 0; 
     // 0: nothing happen
     // 1: A wins
     // 2: B wins

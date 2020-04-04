@@ -21,7 +21,7 @@
 
 
 module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw15, btnc, input [4:0] actual, target,
-               input [3:0] turnA, turnB, input turn,
+               input [3:0] turnA, turnB, input turn, input [1:0] status,
                output reg [15:0] oled_dat_out, output reg GOAL = 0, output reg MISS = 0);
     parameter WHITE = 16'hFFFF;
     parameter GREEN = 16'h07E0;
@@ -36,7 +36,7 @@ module stadium(input clk_6p25, freeze, input [12:0] pix_indx, input sw15, btnc, 
     xy_coordinate (pix_indx, width, height);
     
     wire [15:0] oled_dat_turn;
-    display_turn (.CLOCK(clk_6p25), .width(width), .height(height), .turn(turn), .turnA(turnA), 
+    display_turn (.CLOCK(clk_6p25), .width(width), .height(height), .turn(turn), .turnA(turnA), .status(status),
                   .turnB(turnB), .oled_dat_out(oled_dat_turn));
     
 //    wire clk_6hz;
